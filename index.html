@@ -1,0 +1,1654 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversor DSpace Dublin Core para MARC21/RDA - UCS Pergamum</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        code, pre, .font-mono { font-family: 'JetBrains Mono', monospace; }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- CABEÇALHO DA APLICAÇÃO -->
+    <header class="bg-blue-900 text-white shadow-lg border-b-4 border-amber-500">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="bg-white text-blue-900 p-2.5 rounded-lg font-black text-xl shadow-inner tracking-wider">
+                        UCS
+                    </div>
+                    <div>
+                        <h1 class="text-xl sm:text-2xl font-bold tracking-tight">Conversor DSpace Dublin Core &rarr; MARC21 / RDA</h1>
+                        <p class="text-blue-200 text-xs sm:text-sm">Sistema Pergamum &bull; Biblioteca Central BICE / Campus UCS</p>
+                    </div>
+                </div>
+
+                <!-- IDENTIFICADOR OBRIGATÓRIO PERGAMUM -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="bg-amber-500 text-slate-950 font-bold px-3 py-1.5 rounded-md text-xs sm:text-sm shadow-sm flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h6a1 1 0 100-2H7zm0 4a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
+                        Tipo de obra = 27 - TCC - Graduação
+                    </span>
+                    <span class="bg-blue-800/80 text-blue-100 px-2.5 py-1.5 rounded-md text-xs border border-blue-700">
+                        RDA / ISBD
+                    </span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- PAINEL DE ENTRADA E CONFIGURAÇÃO (ESQUERDA) -->
+        <section class="lg:col-span-6 space-y-6">
+
+            <!-- BARRA DE AÇÕES RÁPIDAS -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Ações Rápidas:</span>
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" id="btnLoadExample" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs px-3.5 py-2 rounded-lg transition-colors shadow-sm flex items-center gap-1.5">
+                        Carregar Exemplo (Éderson Copelli)
+                    </button>
+                    <button type="button" id="btnClearAll" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium text-xs px-3 py-2 rounded-lg transition-colors">
+                        Limpar TUDO
+                    </button>
+                </div>
+            </div>
+
+            <!-- SELEÇÃO DO CURSO / CAMPUS UCS -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-3">
+                <label for="courseSelect" class="block text-sm font-semibold text-slate-900">
+                    1. Curso e Campus UCS <span class="text-red-500">*</span>
+                </label>
+                <p class="text-xs text-slate-500">Determina automaticamente a Classificação CDU (080), Nota de TCC (502), Autoridade (710) e Cidade (264 $a).</p>
+                <select id="courseSelect" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5">
+                    <!-- Preenchido dinamicamente via JS (Ordem Alfabética) -->
+                </select>
+
+                <!-- RESUMO DOS DADOS MAPEADOS DO CURSO SELECIONADO -->
+                <div id="courseDetailsCard" class="bg-blue-50/70 border border-blue-200 rounded-lg p-3 text-xs text-blue-900 space-y-1 mt-2 hidden">
+                    <div><span class="font-semibold">CDU (080):</span> <span id="lblCdu"></span></div>
+                    <div><span class="font-semibold">Cidade (264 $a):</span> <span id="lblCidade"></span></div>
+                    <div><span class="font-semibold">Autoridade (710):</span> <span id="lblAutoridade"></span></div>
+                </div>
+            </div>
+
+            <!-- ENTRADA DOS METADADOS DUBLIN CORE -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-semibold text-slate-900">2. Metadados do Trabalho (Dublin Core)</h2>
+                    <span class="text-xs text-slate-400">Edite os campos abaixo</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <label class="block font-medium text-slate-700 mb-1">Autor Principal (dc.contributor.author)</label>
+                        <input type="text" id="dcAuthor" placeholder="Copelli, Éderson Luis" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block font-medium text-slate-700 mb-1">Ano de Nascimento Autor (Opcional)</label>
+                        <input type="text" id="dcAuthorYear" placeholder="1991" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block font-medium text-slate-700 mb-1">Orientador (dc.contributor.advisor)</label>
+                        <input type="text" id="dcAdvisor" placeholder="Ribeiro, Helena Graziottin" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block font-medium text-slate-700 mb-1">Ano Nascimento Orientador (Opcional)</label>
+                        <input type="text" id="dcAdvisorYear" placeholder="1968" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label class="block font-medium text-slate-700 mb-1">Coorientadores / Outros Colaboradores (Separe por ponto e vírgula)</label>
+                        <input type="text" id="dcOthers" placeholder="Notari, Daniel Luís; Silva, Scheila de Avila e" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label class="block font-medium text-slate-700 mb-1">Título do Trabalho (dc.title)</label>
+                        <input type="text" id="dcTitle" placeholder="Proposta de módulo de avaliação da qualidade da água para o portal Lacos Web" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label class="block font-medium text-slate-700 mb-1">Título em Outro Idioma / Variante (246)</label>
+                        <input type="text" id="dcTitleAlt" placeholder="Proposal for a water quality assessment module for the Lacos Web portal" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block font-medium text-slate-700 mb-1">Ano de Defesa / Submissão (dc.date.submitted)</label>
+                        <input type="text" id="dcYearSubmitted" placeholder="2017" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block font-medium text-slate-700 mb-1">URL Handle (dc.identifier.uri)</label>
+                        <input type="text" id="dcUri" placeholder="https://repositorio.ucs.br/handle/11338/3041" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+
+                <!-- SEÇÃO DE RESUMOS -->
+                <div class="space-y-3 pt-2 border-t border-slate-100">
+                    <div>
+                        <label class="block font-medium text-xs text-slate-700 mb-1">
+                            Resumo em Português (dc.description) - <span class="text-blue-600">Bloco único contínuo</span>
+                        </label>
+                        <textarea id="dcAbstractPt" rows="4" placeholder="O Projeto LACOS (Lagoas Costeiras), tem por objetivo..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block font-medium text-xs text-slate-700 mb-1">
+                            Resumo em Inglês (Abstract) - <span class="text-blue-600">Prefixado automaticamente como 520 #8 $a Abstract : </span>
+                        </label>
+                        <textarea id="dcAbstractEn" rows="3" placeholder="The LACOS Project (Coastal Lagoons) aims to..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block font-medium text-xs text-slate-700 mb-1">
+                            Resumo em Espanhol (Resumen) - Opcional
+                        </label>
+                        <textarea id="dcAbstractEs" rows="2" placeholder="El Proyecto LACOS tiene como objetivo..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+                </div>
+
+                <!-- ASSUNTOS -->
+                <div class="pt-2 border-t border-slate-100">
+                    <label class="block font-medium text-xs text-slate-700 mb-1">
+                        Assuntos / Palavras-chave (dc.subject)
+                    </label>
+                    <p class="text-[11px] text-slate-500 mb-1.5">Digite um por linha. Use hífen (-) para subdivisões. Exemplos: <code class="bg-slate-100 px-1 rounded">Projeto Lagoas Costeiras</code> | <code class="bg-slate-100 px-1 rounded">Água - Qualidade</code> | <code class="bg-slate-100 px-1 rounded">Brasil - História</code></p>
+                    <textarea id="dcSubjects" rows="4" placeholder="Projeto Lagoas Costeiras&#10;Banco de dados&#10;Água - Qualidade" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-blue-500 focus:border-blue-500"></textarea>
+                </div>
+            </div>
+
+            <!-- OPÇÕES SELECIONÁVEIS PARA NOTA 504 / NOTAS COMPLEMENTARES -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-3">
+                <h2 class="text-sm font-semibold text-slate-900">3. Detalhes Físicos e Notas Complementares</h2>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs mb-3">
+                    <div>
+                        <label class="block font-medium text-slate-700 mb-1">Páginas / Descrição Física (300 $a)</label>
+                        <input type="text" id="physPages" value="1 recurso on-line (120 páginas)" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-slate-700 mb-1">Tamanho do Arquivo PDF (347 $c)</label>
+                        <input type="text" id="fileSize" value="3.040 MB" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2">
+                    </div>
+                </div>
+
+                <div class="space-y-2 text-xs text-slate-800 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <span class="font-semibold text-slate-900 block mb-1">Selecione as notas aplicáveis (Campo 504 / 500):</span>
+                    
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="chkBiblio" checked class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+                        <span><strong>103 / 3:</strong> Inclui bibliografia (Tag 504)</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="chkAnexos" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+                        <span><strong>103 / 6:</strong> Inclui anexos (Tag 500)</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="chkApendices" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+                        <span><strong>103 / 7:</strong> Inclui apêndices (Tag 500)</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="chkGlossario" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+                        <span><strong>103 / 5:</strong> Inclui glossário (Tag 500)</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="chkIndice" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+                        <span><strong>103 / 4:</strong> Inclui índice (Tag 500)</span>
+                    </label>
+
+                    <div class="pt-2 border-t border-slate-200 mt-2">
+                        <label class="flex items-center gap-2 cursor-pointer text-amber-900 font-medium">
+                            <input type="checkbox" id="chkConfidential" class="w-4 h-4 text-amber-600 rounded focus:ring-amber-500">
+                            <span><strong>506:</strong> Arquivo retido por termo de confidencialidade (Bloqueado/Cadeado)</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- PAINEL DE SAÍDA E VISUALIZAÇÃO MARC21 (DIREITA) -->
+        <section class="lg:col-span-6 space-y-6 flex flex-col">
+
+            <div class="bg-slate-900 text-white p-5 rounded-xl shadow-lg border border-slate-800 flex-1 flex flex-col space-y-4">
+                
+                <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <h2 class="text-sm font-semibold tracking-wide text-slate-100">Registro MARC21 Gerado (Pergamum)</h2>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" id="btnCopyMarc" class="bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 shadow">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                            Copiar Registros
+                        </button>
+                        <button type="button" id="btnDownloadTxt" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 shadow">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            Baixar .TXT
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ÁREA DE EXIBIÇÃO DO TEXTO FORMATADO PARA IMPORTAÇÃO PERGAMUM -->
+                <div class="relative flex-1 flex flex-col min-h-[420px]">
+                    <textarea id="marcOutput" readonly class="w-full flex-1 bg-slate-950 text-emerald-400 p-4 rounded-lg border border-slate-800 font-mono text-xs leading-relaxed focus:outline-none resize-none shadow-inner select-all"></textarea>
+                </div>
+
+                <!-- ALERTA DE COPIADO COM SUCESSO -->
+                <div id="toastNotification" class="hidden bg-emerald-500 text-slate-950 font-semibold text-xs px-4 py-2 rounded-lg text-center shadow-md transition-all">
+                    ✓ Registro copiado para a área de transferência!
+                </div>
+
+            </div>
+
+            <!-- QUADRO INFORMATIVO DE REGRAS E PONTUAÇÃO -->
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-900 space-y-1.5">
+                <span class="font-bold flex items-center gap-1 text-amber-950">
+                    💡 Recomendações Importantes do Padrão UCS:
+                </span>
+                <ul class="list-disc list-inside space-y-1 text-amber-800">
+                    <li>A tag <strong>502</strong> é preenchida sem subcampos extras e finaliza com o ano de defesa.</li>
+                    <li>A tag <strong>520</strong> remove quebras de linha e adiciona o sufixo <code class="bg-amber-100 px-1 rounded">[resumo fornecido pelo autor]</code>.</li>
+                    <li>Assuntos geográficos (<strong>651</strong>) ativam automaticamente a Tag <strong>043</strong> com o código MARC correspondente.</li>
+                    <li>As tags <strong>546</strong> (nota de idioma) e <strong>041</strong> (códigos de idioma) são geradas automaticamente para resumos multilíngues.</li>
+                </ul>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- RODAPÉ DA PÁGINA -->
+    <footer class="bg-slate-900 text-slate-400 text-xs py-4 text-center border-t border-slate-800 mt-auto">
+        <p>Desenvolvido para a Biblioteca UCS - Universidade de Caxias do Sul &bull; Padrão Pergamum / RDA / MARC21</p>
+    </footer>
+
+    <!-- LOGICA JavaScript COMPLETA -->
+    <script>
+        // TABELA COMPLETA DE CURSOS E CAMPUSES DA UCS (ORDEM ALFABÉTICA)
+        const UCS_COURSES = [
+            {
+                name: "Administração - CAHOR",
+                cdu: "658",
+                code502: 91,
+                authCode: "612610",
+                city: "Canela, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário da Região das Hortênsias. Bacharelado em Administração, {ANO}."
+            },
+            {
+                name: "Administração - CAMVA",
+                cdu: "658",
+                code502: 78,
+                authCode: "612508",
+                city: "Vacaria, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Vacaria. Bacharelado em Administração, {ANO}."
+            },
+            {
+                name: "Administração - CARVI",
+                cdu: "658",
+                code502: 88,
+                authCode: "612097",
+                city: "Bento Gonçalves, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário da Região dos Vinhedos. Bacharelado em Administração, {ANO}."
+            },
+            {
+                name: "Administração - CFAR",
+                cdu: "658",
+                code502: 77,
+                authCode: "612098",
+                city: "Farroupilha, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Farroupilha. Bacharelado em Administração, {ANO}."
+            },
+            {
+                name: "Administração - CGUA",
+                cdu: "658",
+                code502: 80,
+                authCode: "612274",
+                city: "Guaporé, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Guaporé. Bacharelado em Administração, {ANO}."
+            },
+            {
+                name: "Administração - CPRA",
+                cdu: "658",
+                code502: 87,
+                authCode: "612276",
+                city: "Nova Prata, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Nova Prata. Bacharelado em Administração, {ANO}."
+            },
+            {
+                name: "Administração - CVALE",
+                cdu: "658",
+                code502: 90,
+                authCode: "612389",
+                city: "São Sebastião do Caí, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário Vale do Caí. Bacharelado em Administração, {ANO}."
+            },
+            {
+                name: "Administração - SEDE",
+                cdu: "658",
+                code502: 21,
+                authCode: "611933",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Administração, {ANO}."
+            },
+            {
+                name: "Agronomia - CAMVA",
+                cdu: "631/635",
+                code502: 123,
+                authCode: "617981",
+                city: "Vacaria, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Vacaria. Bacharelado em Agronomia, {ANO}."
+            },
+            {
+                name: "Agronomia - CPRA",
+                cdu: "631/635",
+                code502: 131,
+                authCode: "617980",
+                city: "Nova Prata, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Nova Prata. Bacharelado em Agronomia, {ANO}."
+            },
+            {
+                name: "Agronomia - SEDE",
+                cdu: "631/635",
+                code502: 52,
+                authCode: "612590",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Agronomia, {ANO}."
+            },
+            {
+                name: "Análise e Desenvolvimento de Sistemas - SEDE",
+                cdu: "004",
+                code502: 28,
+                authCode: "613697",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Análise e Desenvolvimento de Sistemas, {ANO}."
+            },
+            {
+                name: "Análise e Desenvolvimento de Sistemas - Tecnologia - SEDE",
+                cdu: "004",
+                code502: 31,
+                authCode: "613697",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Tecnologia em Análise e Desenvolvimento de Sistemas, {ANO}."
+            },
+            {
+                name: "Arquitetura e Urbanismo - CARVI",
+                cdu: "72",
+                code502: 71,
+                authCode: "612591",
+                city: "Bento Gonçalves, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário da Região dos Vinhedos. Bacharelado em Arquitetura e Urbanismo, {ANO}."
+            },
+            {
+                name: "Arquitetura e Urbanismo - SEDE",
+                cdu: "72",
+                code502: 106,
+                authCode: "612592",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Arquitetura e Urbanismo, {ANO}."
+            },
+            {
+                name: "Artes Visuais - CAMPUS 8 (Bacharelado)",
+                cdu: "7",
+                code502: 47,
+                authCode: "612595",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Artes Visuais, {ANO}."
+            },
+            {
+                name: "Artes Visuais - CAMPUS 8 (Licenciatura)",
+                cdu: "7",
+                code502: 110,
+                authCode: "612596",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Licenciatura em Artes Visuais, {ANO}."
+            },
+            {
+                name: "Automação Industrial - Tecnologia - SEDE",
+                cdu: "681.5",
+                code502: 126,
+                authCode: "612597",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Tecnologia em Automação Industrial, {ANO}."
+            },
+            {
+                name: "Biblioteconomia - SEDE",
+                cdu: "02",
+                code502: 38,
+                authCode: "613696",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Biblioteconomia, {ANO}."
+            },
+            {
+                name: "Biomedicina - SEDE",
+                cdu: "616",
+                code502: 122,
+                authCode: "618096",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Biomedicina, {ANO}."
+            },
+            {
+                name: "Ciência da Computação - CARVI",
+                cdu: "004",
+                code502: 35,
+                authCode: "612709",
+                city: "Bento Gonçalves, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário da Região dos Vinhedos. Bacharelado em Ciência da Computação, {ANO}."
+            },
+            {
+                name: "Ciência da Computação - SEDE",
+                cdu: "004",
+                code502: 25,
+                authCode: "612708",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Ciência da Computação, {ANO}."
+            },
+            {
+                name: "Ciências Biológicas - CARVI",
+                cdu: "573",
+                code502: 119,
+                authCode: "615295",
+                city: "Bento Gonçalves, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário da Região dos Vinhedos. Bacharelado em Ciências Biológicas, {ANO}."
+            },
+            {
+                name: "Ciências Biológicas - SEDE",
+                cdu: "573",
+                code502: 101,
+                authCode: "612654",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Ciências Biológicas, {ANO}."
+            },
+            {
+                name: "Ciências Contábeis - CAHOR",
+                cdu: "657",
+                code502: 114,
+                authCode: "612610",
+                city: "Canela, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário da Região das Hortênsias. Bacharelado em Ciências Contábeis, {ANO}."
+            },
+            {
+                name: "Ciências Contábeis - CAMVA",
+                cdu: "657",
+                code502: 56,
+                authCode: "612608",
+                city: "Vacaria, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Vacaria. Bacharelado em Ciências Contábeis, {ANO}."
+            },
+            {
+                name: "Ciências Contábeis - CARVI",
+                cdu: "657",
+                code502: 55,
+                authCode: "612603",
+                city: "Bento Gonçalves, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário da Região dos Vinhedos. Bacharelado em Ciências Contábeis, {ANO}."
+            },
+            {
+                name: "Ciências Contábeis - CFAR",
+                cdu: "657",
+                code502: 33,
+                authCode: "612607",
+                city: "Farroupilha, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Farroupilha. Bacharelado em Ciências Contábeis, {ANO}."
+            },
+            {
+                name: "Ciências Contábeis - CGUA",
+                cdu: "657",
+                code502: 115,
+                authCode: "613997",
+                city: "Guaporé, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Guaporé. Bacharelado em Ciências Contábeis, {ANO}."
+            },
+            {
+                name: "Ciências Contábeis - CPRA",
+                cdu: "657",
+                code502: 98,
+                authCode: "612413",
+                city: "Nova Prata, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Nova Prata. Bacharelado em Ciências Contábeis, {ANO}."
+            },
+            {
+                name: "Ciências Contábeis - CVALE",
+                cdu: "657",
+                code502: 76,
+                authCode: "612609",
+                city: "São Sebastião do Caí, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário do Vale do Cai. Bacharelado em Ciências Contábeis, {ANO}."
+            },
+            {
+                name: "Ciências Contábeis - SEDE",
+                cdu: "657",
+                code502: 24,
+                authCode: "612414",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Ciências Contábeis, {ANO}."
+            },
+            {
+                name: "Ciências Econômicas - SEDE",
+                cdu: "330",
+                code502: 79,
+                authCode: "612855",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Ciências Econômicas, {ANO}."
+            },
+            {
+                name: "Comércio Internacional - CARVI",
+                cdu: "339.5",
+                code502: 81,
+                authCode: "612887",
+                city: "Bento Gonçalves, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário da Região dos Vinhedos. Bacharelado em Comércio Internacional, {ANO}."
+            },
+            {
+                name: "Comércio Internacional - SEDE",
+                cdu: "339.5",
+                code502: 49,
+                authCode: "612888",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Comércio Internacional, {ANO}."
+            },
+            {
+                name: "Criação Digital - SEDE",
+                cdu: "7.038.3",
+                code502: 135,
+                authCode: "620371",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Criação Digital, {ANO}."
+            },
+            {
+                name: "Design - CAMPUS 8",
+                cdu: "7.05",
+                code502: 84,
+                authCode: "613577",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Design, {ANO}."
+            },
+            {
+                name: "Design - CARVI",
+                cdu: "7.05",
+                code502: 85,
+                authCode: "613574",
+                city: "Bento Gonçalves, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário da Região dos Vinhedos. Bacharelado em Design, {ANO}."
+            },
+            {
+                name: "Design - SEDE",
+                cdu: "7.05",
+                code502: 83,
+                authCode: "613576",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Design, {ANO}."
+            },
+            {
+                name: "Design Gráfico - CARVI",
+                cdu: "7.05",
+                code502: 65,
+                authCode: "613574",
+                city: "Bento Gonçalves, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário da Região dos Vinhedos. Bacharelado em Design Gráfico, {ANO}."
+            },
+            {
+                name: "Direito - CAHOR",
+                cdu: "34",
+                code502: 70,
+                authCode: "612151",
+                city: "Canela, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário da Região das Hortênsias. Bacharelado em Direito, {ANO}."
+            },
+            {
+                name: "Direito - CAMVA",
+                cdu: "34",
+                code502: 105,
+                authCode: "612723",
+                city: "Vacaria, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Vacaria. Bacharelado em Direito, {ANO}."
+            },
+            {
+                name: "Direito - CARVI",
+                cdu: "34",
+                code502: 60,
+                authCode: "612721",
+                city: "Bento Gonçalves, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário da Região dos Vinhedos. Bacharelado em Direito, {ANO}."
+            },
+            {
+                name: "Direito - CFAR",
+                cdu: "34",
+                code502: 128,
+                authCode: "619253",
+                city: "Farroupilha, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Farroupila. Bacharelado em Direito, {ANO}."
+            },
+            {
+                name: "Direito - CGUA",
+                cdu: "34",
+                code502: 103,
+                authCode: "612722",
+                city: "Guaporé, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Guaporé. Bacharelado em Direito, {ANO}."
+            },
+            {
+                name: "Direito - CPRA",
+                cdu: "34",
+                code502: 59,
+                authCode: "612720",
+                city: "Nova Prata, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Nova Prata. Bacharelado em Direito, {ANO}."
+            },
+            {
+                name: "Direito - CVALE",
+                cdu: "34",
+                code502: 140,
+                authCode: "624383",
+                city: "São Sebastião do Caí, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de São Sebastião do Caí. Bacharelado em Direito, {ANO}."
+            },
+            {
+                name: "Direito - SEDE",
+                cdu: "34",
+                code502: 43,
+                authCode: "612719",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Direito, {ANO}."
+            },
+            {
+                name: "Educação Física - Bacharelado - CARVI",
+                cdu: "796",
+                code502: 120,
+                authCode: "612928",
+                city: "Bento Gonçalves, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário da Região dos Vinhedos. Bacharelado em Educação Física, {ANO}."
+            },
+            {
+                name: "Educação Física - Bacharelado - SEDE",
+                cdu: "796",
+                code502: 94,
+                authCode: "612454",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Educação Física, {ANO}."
+            },
+            {
+                name: "Educação Física - Licenciatura - CAMVA",
+                cdu: "796",
+                code502: 97,
+                authCode: "612928",
+                city: "Vacaria, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Vacaria. Licenciatura em Educação Física, {ANO}."
+            },
+            {
+                name: "Educação Física - Licenciatura - CARVI",
+                cdu: "796",
+                code502: 96,
+                authCode: "612928",
+                city: "Bento Gonçalves, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário da Região dos Vinhedos. Licenciatura em Educação Física, {ANO}."
+            },
+            {
+                name: "Educação Física - Licenciatura - SEDE",
+                cdu: "796",
+                code502: 95,
+                authCode: "612454",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Licenciatura em Educação Física, {ANO}."
+            },
+            {
+                name: "Enfermagem - SEDE",
+                cdu: "616-083",
+                code502: 100,
+                authCode: "613688",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Enfermagem, {ANO}."
+            },
+            {
+                name: "Engenharia Ambiental - SEDE",
+                cdu: "62:504",
+                code502: 51,
+                authCode: "612937",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Engenharia Ambiental, {ANO}."
+            },
+            {
+                name: "Engenharia Automotiva - SEDE",
+                cdu: "629",
+                code502: 113,
+                authCode: "613594",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Engenharia Automotiva, {ANO}."
+            },
+            {
+                name: "Engenharia Civil - CARVI",
+                cdu: "624",
+                code502: 50,
+                authCode: "612958",
+                city: "Bento Gonçalves, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário da Região dos Vinhedos. Bacharelado em Engenharia Civil, {ANO}."
+            },
+            {
+                name: "Engenharia Civil - SEDE",
+                cdu: "624",
+                code502: 48,
+                authCode: "612957",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Engenharia Civil, {ANO}."
+            },
+            {
+                name: "Engenharia de Computação - CARVI",
+                cdu: "681.5",
+                code502: 142,
+                authCode: "627081",
+                city: "Bento Gonçalves, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário da Região dos Vinhedos. Bacharelado em Engenharia de Computação, {ANO}."
+            },
+            {
+                name: "Engenharia de Computação - SEDE",
+                cdu: "681.5",
+                code502: 104,
+                authCode: "613687",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Engenharia de Computação, {ANO}."
+            },
+            {
+                name: "Engenharia de Controle e Automação - SEDE",
+                cdu: "681.5",
+                code502: 29,
+                authCode: "613158",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Engenharia de Controle e Automação, {ANO}."
+            },
+            {
+                name: "Engenharia de Materiais - SEDE",
+                cdu: "620.1",
+                code502: 127,
+                authCode: "619176",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Engenharia de Materiais, {ANO}."
+            },
+            {
+                name: "Engenharia de Produção - CARVI",
+                cdu: "658.5",
+                code502: 111,
+                authCode: "612975",
+                city: "Bento Gonçalves, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário da Região dos Vinhedos. Bacharelado em Engenharia de Produção, {ANO}."
+            },
+            {
+                name: "Engenharia de Produção - SEDE",
+                cdu: "658.5",
+                code502: 42,
+                authCode: "612955",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Engenharia de Produção, {ANO}."
+            },
+            {
+                name: "Engenharia Elétrica - CARVI",
+                cdu: "621.3",
+                code502: 54,
+                authCode: "613197",
+                city: "Bento Gonçalves, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário da Região dos Vinhedos. Bacharelado em Engenharia Elétrica, {ANO}."
+            },
+            {
+                name: "Engenharia Elétrica - SEDE",
+                cdu: "621.3",
+                code502: 40,
+                authCode: "613198",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Engenharia Elétrica, {ANO}."
+            },
+            {
+                name: "Engenharia Eletrônica - CARVI",
+                cdu: "621.3",
+                code502: 41,
+                authCode: "613259",
+                city: "Bento Gonçalves, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário da Região dos Vinhedos. Bacharelado em Engenharia Eletrônica, {ANO}."
+            },
+            {
+                name: "Engenharia Eletrônica - SEDE",
+                cdu: "621.3",
+                code502: 109,
+                authCode: "612310",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Engenharia Eletrônica, {ANO}."
+            },
+            {
+                name: "Engenharia Mecânica - CARVI",
+                cdu: "621",
+                code502: 107,
+                authCode: "612858",
+                city: "Bento Gonçalves, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário da Região dos Vinhedos. Bacharelado em Engenharia Mecânica, {ANO}."
+            },
+            {
+                name: "Engenharia Mecânica - SEDE",
+                cdu: "621",
+                code502: 32,
+                authCode: "557466",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Engenharia Mecânica, {ANO}."
+            },
+            {
+                name: "Engenharia Química - SEDE",
+                cdu: "66",
+                code502: 53,
+                authCode: "613119",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Engenharia Química, {ANO}."
+            },
+            {
+                name: "Estética e Cosmética - Tecnologia - SEDE",
+                cdu: "687.55",
+                code502: 138,
+                authCode: "620806",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Tecnologia em Estética e Cosmética, {ANO}."
+            },
+            {
+                name: "Farmácia - CARVI",
+                cdu: "615",
+                code502: 136,
+                authCode: "620735",
+                city: "Bento Gonçalves, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário da Região dos Vinhedos. Bacharelado em Farmácia, {ANO}."
+            },
+            {
+                name: "Farmácia - SEDE",
+                cdu: "615",
+                code502: 118,
+                authCode: "615286",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Farmácia, {ANO}."
+            },
+            {
+                name: "Filosofia - SEDE",
+                cdu: "1",
+                code502: 62,
+                authCode: "613685",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Filosofia, {ANO}."
+            },
+            {
+                name: "Fisioterapia - CARVI",
+                cdu: "615.8",
+                code502: 134,
+                authCode: "620094",
+                city: "Bento Gonçalves, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário da Região dos Vinhedos. Bacharelado em Fisioterapia, {ANO}."
+            },
+            {
+                name: "Fisioterapia - SEDE",
+                cdu: "615.8",
+                code502: 57,
+                authCode: "612081",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Fisioterapia, {ANO}."
+            },
+            {
+                name: "Fotografia - Tecnologia - SEDE",
+                cdu: "77",
+                code502: 69,
+                authCode: "613308",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Tecnologia em Fotografia, {ANO}."
+            },
+            {
+                name: "Gestão de Recursos Humanos - Tecnologia - SEDE",
+                cdu: "658.3",
+                code502: 74,
+                authCode: "613683",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Tecnologia em Gestão de Recursos Humanos, {ANO}."
+            },
+            {
+                name: "Gestão Financeira - Tecnologia - SEDE",
+                cdu: "658.15",
+                code502: 102,
+                authCode: "613680",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Tecnologia em Gestão Financeira, {ANO}."
+            },
+            {
+                name: "História - Licenciatura - SEDE",
+                cdu: "94",
+                code502: 61,
+                authCode: "612588",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Licenciatura em História, {ANO}."
+            },
+            {
+                name: "Jornalismo - SEDE",
+                cdu: "070",
+                code502: 89,
+                authCode: "613162",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Comunicação Social - Habilitação em Jornalismo, {ANO}."
+            },
+            {
+                name: "Letras - Licenciatura - SEDE",
+                cdu: "81",
+                code502: 63,
+                authCode: "613382",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Licenciatura em Letras, {ANO}."
+            },
+            {
+                name: "Medicina Veterinária - SEDE",
+                cdu: "619",
+                code502: 82,
+                authCode: "612386",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Medicina Veterinária, {ANO}."
+            },
+            {
+                name: "Música - CAMPUS 8",
+                cdu: "78",
+                code502: 58,
+                authCode: "612507",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Licenciatura em Música, {ANO}."
+            },
+            {
+                name: "Nutrição - CAHOR",
+                cdu: "613.2",
+                code502: 44,
+                authCode: "613440",
+                city: "Canela, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário da Região das Hortênsias. Bacharelado em Nutrição, {ANO}."
+            },
+            {
+                name: "Nutrição - CARVI",
+                cdu: "613.2",
+                code502: 121,
+                authCode: "616111",
+                city: "Bento Gonçalves, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário da Região dos Vinhedos. Bacharelado em Nutrição, {ANO}."
+            },
+            {
+                name: "Nutrição - SEDE",
+                cdu: "613.2",
+                code502: 45,
+                authCode: "613441",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Nutrição, {ANO}."
+            },
+            {
+                name: "Odontologia - SEDE",
+                cdu: "616.314",
+                code502: 86,
+                authCode: "613449",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Odontologia, {ANO}."
+            },
+            {
+                name: "Pedagogia - CARVI",
+                cdu: "37",
+                code502: 112,
+                authCode: "613368",
+                city: "Bento Gonçalves, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário da Região dos Vinhedos. Licenciatura em Pedagogia, {ANO}."
+            },
+            {
+                name: "Pedagogia - SEDE",
+                cdu: "37",
+                code502: 46,
+                authCode: "612602",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Licenciatura em Pedagogia, {ANO}."
+            },
+            {
+                name: "Podologia - Tecnologia - SEDE",
+                cdu: "616.7",
+                code502: 137,
+                authCode: "620754",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Tecnologia em Podologia, {ANO}."
+            },
+            {
+                name: "Psicologia - CARVI",
+                cdu: "159.9",
+                code502: 132,
+                authCode: "624469",
+                city: "Bento Gonçalves, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário da Região dos Vinhedos. Bacharelado em Psicologia, {ANO}."
+            },
+            {
+                name: "Psicologia - SEDE",
+                cdu: "159.9",
+                code502: 73,
+                authCode: "611813",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Psicologia, {ANO}."
+            },
+            {
+                name: "Publicidade e Propaganda - SEDE",
+                cdu: "659.1",
+                code502: 92,
+                authCode: "613519",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Comunicação Social - Habilitação em Publicidade e Propaganda, {ANO}."
+            },
+            {
+                name: "Química - SEDE",
+                cdu: "54",
+                code502: 34,
+                authCode: "613538",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Química, {ANO}."
+            },
+            {
+                name: "Radiologia - Tecnologia - SEDE",
+                cdu: "615.849",
+                code502: 99,
+                authCode: "613543",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Tecnologia em Radiologia, {ANO}."
+            },
+            {
+                name: "Relações Públicas - SEDE",
+                cdu: "659.4",
+                code502: 93,
+                authCode: "613678",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Comunicação Social - Habilitação em Relações Públicas, {ANO}."
+            },
+            {
+                name: "Serviço Social - SEDE",
+                cdu: "364.442",
+                code502: 72,
+                authCode: "613648",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Serviço Social, {ANO}."
+            },
+            {
+                name: "Sistemas de Informação - CARVI",
+                cdu: "004",
+                code502: 36,
+                authCode: "613545",
+                city: "Bento Gonçalves, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul. Campus Universitário da Região dos Vinhedos. Bacharelado em Sistemas de Informação, {ANO}."
+            },
+            {
+                name: "Sistemas de Informação - SEDE",
+                cdu: "004",
+                code502: 20,
+                authCode: "613544",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Sistemas de Informação, {ANO}."
+            },
+            {
+                name: "Tecnologias Digitais - SEDE",
+                cdu: "004",
+                code502: 26,
+                authCode: "613031",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Tecnologias Digitais, {ANO}."
+            },
+            {
+                name: "Turismo - SEDE",
+                cdu: "338.48",
+                code502: 64,
+                authCode: "613646",
+                city: "Caxias do Sul, RS",
+                note502Template: "Trabalho de Conclusão de Curso (Graduação) - Universidade de Caxias do Sul, Campus Universitário de Caxias do Sul. Bacharelado em Turismo, {ANO}."
+            }
+        ];
+
+        // Mapeamento das autoridades completas Pergamum
+        const AUTHORITY_FULL_TEXTS = {
+            "612610": "Universidade de Caxias do Sul. $b Campus Universitário da Região das Hortênsias. $b Curso de Administração",
+            "612151": "Universidade de Caxias do Sul. $b Campus Universitário da Região das Hortênsias. $b Curso de Direito",
+            "613440": "Universidade de Caxias do Sul. $b Campus Universitário da Região das Hortênsias. $b Curso de Nutrição",
+            "612097": "Universidade de Caxias do Sul. $b Campus Universitário da Região dos Vinhedos. $b Curso de Administração",
+            "612591": "Universidade de Caxias do Sul. $b Campus Universitário da Região dos Vinhedos. $b Curso de Arquitetura e Urbanismo",
+            "612709": "Universidade de Caxias do Sul. $b Campus Universitário da Região dos Vinhedos. $b Curso de Ciência da Computação",
+            "615295": "Universidade de Caxias do Sul. $b Campus Universitário da Região dos Vinhedos. $b Curso de Ciências Biológicas",
+            "612603": "Universidade de Caxias do Sul. $b Campus Universitário da Região dos Vinhedos. $b Curso de Ciências Contábeis",
+            "612887": "Universidade de Caxias do Sul. $b Campus Universitário da Região dos Vinhedos. $b Curso de Comércio Internacional",
+            "613574": "Universidade de Caxias do Sul. $b Campus Universitário da Região dos Vinhedos. $b Curso de Design",
+            "612721": "Universidade de Caxias do Sul. $b Campus Universitário da Região dos Vinhedos. $b Curso de Direito",
+            "612928": "Universidade de Caxias do Sul. $b Campus Universitário da Região dos Vinhedos. $b Curso de Educação Física",
+            "612958": "Universidade de Caxias do Sul. $b Campus Universitário da Região dos Vinhedos. $b Curso de Engenharia Civil",
+            "627081": "Universidade de Caxias do Sul. $b Campus Universitário da Região dos Vinhedos. $b Curso de Engenharia de Computação",
+            "612975": "Universidade de Caxias do Sul. $b Campus Universitário da Região dos Vinhedos. $b Curso de Engenharia de Produção",
+            "613197": "Universidade de Caxias do Sul. $b Campus Universitário da Região dos Vinhedos. $b Curso de Engenharia Elétrica",
+            "613259": "Universidade de Caxias do Sul. $b Campus Universitário da Região dos Vinhedos. $b Curso de Engenharia Eletrônica",
+            "612858": "Universidade de Caxias do Sul. $b Campus Universitário da Região dos Vinhedos. $b Curso de Engenharia Mecânica",
+            "620735": "Universidade de Caxias do Sul. $b Campus Universitário da Região dos Vinhedos. $b Curso de Farmácia",
+            "620094": "Universidade de Caxias do Sul. $b Campus Universitário da Região dos Vinhedos. $b Curso de Fisioterapia",
+            "616111": "Universidade de Caxias do Sul. $b Campus Universitário da Região dos Vinhedos. $b Curso de Nutrição",
+            "613368": "Universidade de Caxias do Sul. $b Campus Universitário da Região dos Vinhedos. $b Curso de Pedagogia",
+            "624469": "Universidade de Caxias do Sul. $b Campus Universitário da Região dos Vinhedos. $b Curso de Psicologia",
+            "613545": "Universidade de Caxias do Sul. $b Campus Universitário da Região dos Vinhedos. $b Curso de Sistemas de Informação",
+            "611933": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Administração",
+            "612590": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Agronomia",
+            "613697": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Análise e Desenvolvimento de Sistemas",
+            "612592": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Arquitetura e Urbanismo",
+            "612595": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Artes Visuais",
+            "612597": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Automação Industrial",
+            "613696": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Biblioteconomia",
+            "618096": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Biomedicina",
+            "612708": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Ciência da Computação",
+            "612654": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Ciências Biológicas",
+            "612414": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Ciências Contábeis",
+            "612855": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Ciências Econômicas",
+            "612888": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Comércio Internacional",
+            "620371": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Criação Digital",
+            "613576": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Design",
+            "612719": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Direito",
+            "612454": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Educação Física",
+            "613688": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Enfermagem",
+            "612937": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Engenharia Ambiental",
+            "613594": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Engenharia Automotiva",
+            "612957": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Engenharia Civil",
+            "613687": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Engenharia de Computação",
+            "613158": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Engenharia de Controle e Automação",
+            "619176": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Engenharia de Materiais",
+            "612955": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Engenharia de Produção",
+            "613198": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Engenharia Elétrica",
+            "612310": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Engenharia Eletrônica",
+            "557466": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Engenharia Mecânica",
+            "613119": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Engenharia Química",
+            "615286": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Farmácia",
+            "613685": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Filosofia",
+            "612081": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Fisioterapia",
+            "613308": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Fotografia",
+            "613683": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Gestão de Recursos Humanos",
+            "613680": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Gestão Financeira",
+            "612588": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de História",
+            "613162": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Jornalismo",
+            "613382": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Letras",
+            "612386": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Medicina Veterinária",
+            "612507": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Música",
+            "613441": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Nutrição",
+            "613449": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Odontologia",
+            "612602": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Pedagogia",
+            "620754": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Podologia",
+            "611813": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Psicologia",
+            "613519": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Publicidade e Propaganda",
+            "613538": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Química",
+            "613543": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Radiologia",
+            "613678": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Relações Públicas",
+            "613648": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Serviço Social",
+            "613544": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Sistemas de Informação",
+            "613031": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Tecnologias Digitais",
+            "613646": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Curso de Turismo",
+            "620806": "Universidade de Caxias do Sul. $b Campus Universitário de Caxias do Sul. $b Estética e Cosmética",
+            "619253": "Universidade de Caxias do Sul. $b Campus Universitário de Farroupila. $b Curso de Direito",
+            "612098": "Universidade de Caxias do Sul. $b Campus Universitário de Farroupilha. $b Curso de Administração",
+            "612607": "Universidade de Caxias do Sul. $b Campus Universitário de Farroupilha. $b Curso de Ciências Contábeis",
+            "612274": "Universidade de Caxias do Sul. $b Campus Universitário de Guaporé. $b Curso de Administração",
+            "613997": "Universidade de Caxias do Sul. $b Campus Universitário de Guaporé. $b Curso de Ciências Contábeis",
+            "612722": "Universidade de Caxias do Sul. $b Campus Universitário de Guaporé. $b Curso de Direito",
+            "612276": "Universidade de Caxias do Sul. $b Campus Universitário de Nova Prata. $b Curso de Administração",
+            "617980": "Universidade de Caxias do Sul. $b Campus Universitário de Nova Prata. $b Curso de Agronomia",
+            "612413": "Universidade de Caxias do Sul. $b Campus Universitário de Nova Prata. $b Curso de Ciências Contábeis",
+            "612720": "Universidade de Caxias do Sul. $b Campus Universitário de Nova Prata. $b Curso de Direito",
+            "624383": "Universidade de Caxias do Sul. $b Campus Universitário de São Sebastião do Caí. $b Curso de Direito",
+            "612508": "Universidade de Caxias do Sul. $b Campus Universitário de Vacaria. $b Curso de Administração",
+            "617981": "Universidade de Caxias do Sul. $b Campus Universitário de Vacaria. $b Curso de Agronomia",
+            "612608": "Universidade de Caxias do Sul. $b Campus Universitário de Vacaria. $b Curso de Ciências Contábeis",
+            "612723": "Universidade de Caxias do Sul. $b Campus Universitário de Vacaria. $b Curso de Direito",
+            "612389": "Universidade de Caxias do Sul. $b Campus Universitário Vale do Caí. $b Curso de Administração",
+            "612609": "Universidade de Caxias do Sul. $b Campus Universitário Vale do Caí. $b Curso de Ciências Contábeis",
+            "612596": "Universidade de Caxias do Sul. $b Campus 8. $b Curso de Artes Visuais",
+            "613577": "Universidade de Caxias do Sul. $b Campus 8. $b Curso de Design"
+        };
+
+        // CÓDIGOS GEOGRÁFICOS MARC (TAG 043)
+        const MARC_043_MAP = {
+            "brasil": "s-bl---",
+            "rio grande do sul": "s-bl-rs",
+            "caxias do sul": "s-bl-rs",
+            "bento gonçalves": "s-bl-rs",
+            "vacaria": "s-bl-rs",
+            "canela": "s-bl-rs",
+            "frança": "e-fr---",
+            "alemanha": "e-gx---",
+            "itália": "e-it---",
+            "espanha": "e-sp---",
+            "estados unidos": "n-us---",
+            "argentina": "s-ag---",
+            "uruguai": "s-uy---",
+            "américa do sul": "s------",
+            "europa": "e------"
+        };
+
+        // INICIALIZAÇÃO E EVENTOS DA PÁGINA
+        document.addEventListener('DOMContentLoaded', () => {
+            populateCourseDropdown();
+            attachEventListeners();
+            generateMarcOutput();
+        });
+
+        // Preenche o dropdown de cursos ordenados alfabeticamente
+        function populateCourseDropdown() {
+            const select = document.getElementById('courseSelect');
+            select.innerHTML = '';
+            
+            // Ordenar alfabeticamente pelo nome
+            const sortedCourses = [...UCS_COURSES].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+
+            sortedCourses.forEach((c, index) => {
+                const option = document.createElement('option');
+                option.value = c.name;
+                option.textContent = c.name;
+                select.appendChild(option);
+            });
+
+            // Selecionar "Ciência da Computação - SEDE" por padrão se existir
+            const defaultIndex = sortedCourses.findIndex(c => c.name.includes("Ciência da Computação - SEDE"));
+            if (defaultIndex !== -1) {
+                select.selectedIndex = defaultIndex;
+            }
+
+            updateCourseCard();
+        }
+
+        function updateCourseCard() {
+            const courseName = document.getElementById('courseSelect').value;
+            const course = UCS_COURSES.find(c => c.name === courseName);
+            const card = document.getElementById('courseDetailsCard');
+
+            if (course) {
+                card.classList.remove('hidden');
+                document.getElementById('lblCdu').textContent = `${course.cdu} ($2 1.ed.)`;
+                document.getElementById('lblCidade').textContent = course.city;
+                const authFull = AUTHORITY_FULL_TEXTS[course.authCode] || "Não informada";
+                document.getElementById('lblAutoridade').textContent = `[${course.authCode}] ${authFull}`;
+            }
+        }
+
+        // Converte Nome em Ordem Indireta ("Sobrenome, Prenome") para Ordem Direta ("Prenome Sobrenome")
+        function toDirectName(invertedName) {
+            if (!invertedName || !invertedName.includes(',')) return invertedName.trim();
+            const parts = invertedName.split(',');
+            const surname = parts[0].trim();
+            const prenome = parts.slice(1).join(',').trim();
+            return `${prenome} ${surname}`;
+        }
+
+        // Converte Nome Direto ("Prenome Sobrenome") para Ordem Indireta ("Sobrenome, Prenome")
+        function toInvertedName(directName) {
+            if (!directName) return "";
+            if (directName.includes(',')) return directName.trim();
+            const parts = directName.trim().split(/\s+/);
+            if (parts.length === 1) return parts[0];
+            const surname = parts.pop();
+            const prenome = parts.join(' ');
+            return `${surname}, ${prenome}`;
+        }
+
+        // FORMATADOR DO REGISTRO MARC21 COMPLETO
+        function generateMarcOutput() {
+            const courseName = document.getElementById('courseSelect').value;
+            const course = UCS_COURSES.find(c => c.name === courseName) || UCS_COURSES[0];
+
+            const authorInverted = document.getElementById('dcAuthor').value.trim();
+            const authorYear = document.getElementById('dcAuthorYear').value.trim();
+            const advisorInverted = document.getElementById('dcAdvisor').value.trim();
+            const advisorYear = document.getElementById('dcAdvisorYear').value.trim();
+            const othersInput = document.getElementById('dcOthers').value.trim();
+            const title = document.getElementById('dcTitle').value.trim();
+            const titleAlt = document.getElementById('dcTitleAlt').value.trim();
+            const yearSubmitted = document.getElementById('dcYearSubmitted').value.trim() || new Date().getFullYear().toString();
+            const uri = document.getElementById('dcUri').value.trim();
+
+            const abstractPt = document.getElementById('dcAbstractPt').value.trim();
+            const abstractEn = document.getElementById('dcAbstractEn').value.trim();
+            const abstractEs = document.getElementById('dcAbstractEs').value.trim();
+
+            const subjectsRaw = document.getElementById('dcSubjects').value.trim();
+
+            const physPages = document.getElementById('physPages').value.trim();
+            const fileSize = document.getElementById('fileSize').value.trim();
+
+            const chkBiblio = document.getElementById('chkBiblio').checked;
+            const chkAnexos = document.getElementById('chkAnexos').checked;
+            const chkApendices = document.getElementById('chkApendices').checked;
+            const chkGlossario = document.getElementById('chkGlossario').checked;
+            const chkIndice = document.getElementById('chkIndice').checked;
+            const chkConfidential = document.getElementById('chkConfidential').checked;
+
+            // MONTAGEM DAS TAGS MARC 21
+            let lines = [];
+            lines.push("<inicio>");
+
+            // 001 - 008
+            lines.push(`001   350740`);
+            lines.push(`003   BR-CxU`);
+            
+            // 005 - Data/Hora Atual
+            const now = new Date();
+            const timestamp = now.getFullYear().toString() +
+                (now.getMonth() + 1).toString().padStart(2, '0') +
+                now.getDate().toString().padStart(2, '0') +
+                now.getHours().toString().padStart(2, '0') +
+                now.getMinutes().toString().padStart(2, '0') +
+                now.getSeconds().toString().padStart(2, '0') + ".0";
+            lines.push(`005   ${timestamp}`);
+
+            lines.push(`007   cr cn# uuuun`);
+            lines.push(`008   ${yearSubmitted.slice(-2)}1005s${yearSubmitted}    rsba   #sm   #000 0#por#d`);
+            lines.push(`040   $a BR-CxU $b por $e rda`);
+
+            // 041 - Código de Idiomas
+            let langCodes = ["por"];
+            if (abstractPt) langCodes.push("por");
+            if (abstractEn) langCodes.push("eng");
+            if (abstractEs) langCodes.push("spa");
+            // Remover duplicados mantendo 'por'
+            let bLangs = [...new Set(langCodes)];
+            lines.push(`041 0 $a por ${bLangs.map(l => `$b ${l}`).join(' ')}`);
+
+            // PROCESSAMENTO DE ASSUNTOS (600, 610, 650, 651) E APLICAÇÃO DA TAG 043
+            let hasGeographicSubject = false;
+            let geoCode043 = "s-bl-rs"; // Padrão UCS/RS
+
+            let subjectLines = [];
+            if (subjectsRaw) {
+                const items = subjectsRaw.split('\n').filter(s => s.trim().length > 0);
+                
+                items.forEach(item => {
+                    const cleanItem = item.trim();
+                    const parts = cleanItem.split(/\s*-\s*|\s*--\s*/);
+                    const mainTerm = parts[0].trim();
+                    const subdivs = parts.slice(1);
+
+                    // Análise de classificação
+                    const isGeo = /brasil|rio grande do sul|caxias do sul|frança|alemanha|itália|espanha|estados unidos|argentina|uruguai|europa/i.test(mainTerm);
+                    const isEntity = /projeto|universidade|instituto|associação|empresa|hospital|governo|prefeitura|igreja/i.test(mainTerm);
+                    const isPerson = /^[A-Z][a-z]+,\s[A-Z]/.test(mainTerm);
+
+                    if (isGeo) {
+                        hasGeographicSubject = true;
+                        let sLine = `651  04 $a ${mainTerm}`;
+                        subdivs.forEach(sd => {
+                            if (/^\d{4}|século/i.test(sd)) sLine += ` $y ${sd}`;
+                            else if (/brasil|rs|caxias/i.test(sd)) sLine += ` $z ${sd}`;
+                            else sLine += ` $x ${sd}`;
+                        });
+                        subjectLines.push(sLine);
+
+                        // Determinar 043
+                        const lowerGeo = mainTerm.toLowerCase();
+                        if (MARC_043_MAP[lowerGeo]) {
+                            geoCode043 = MARC_043_MAP[lowerGeo];
+                        }
+                    } else if (isEntity) {
+                        let sLine = `610 24 $a ${mainTerm}`;
+                        subdivs.forEach(sd => sLine += ` $b ${sd}`);
+                        subjectLines.push(sLine);
+                    } else if (isPerson) {
+                        let sLine = `600 14 $a ${mainTerm}`;
+                        subdivs.forEach(sd => sLine += ` $x ${sd}`);
+                        subjectLines.push(sLine);
+                    } else {
+                        // Tópico Geral
+                        let sLine = `650  04 $a ${mainTerm}`;
+                        subdivs.forEach(sd => {
+                            if (/^\d{4}|século/i.test(sd)) sLine += ` $y ${sd}`;
+                            else if (/brasil|rs|caxias|porto alegre/i.test(sd)) {
+                                hasGeographicSubject = true;
+                                sLine += ` $z ${sd}`;
+                            } else {
+                                sLine += ` $x ${sd}`;
+                            }
+                        });
+                        subjectLines.push(sLine);
+                    }
+                });
+            } else {
+                subjectLines.push(`650  04 $a TCC`);
+            }
+
+            // Tag 043 se houver assunto geográfico
+            if (hasGeographicSubject || true) { // Por padrão UCS sempre inclui 043
+                lines.push(`043   $a ${geoCode043}`);
+            }
+
+            // 080 - CDU
+            lines.push(`080   $a ${course.cdu} $2 1.ed.`);
+
+            // 100 - Autor Principal
+            if (authorInverted) {
+                const datePart = authorYear ? `, $d ${authorYear}-` : '';
+                lines.push(`100 1 $a ${authorInverted}${datePart} $e Autor`);
+            }
+
+            // 245 - Título e Indicação de Responsabilidade
+            let authorDirect = toDirectName(authorInverted);
+            let advisorDirect = toDirectName(advisorInverted);
+
+            let respClause = authorDirect;
+            if (advisorDirect) {
+                respClause += ` ; orientação ${advisorDirect}`;
+            }
+
+            let titleFormatted = title;
+            if (!titleFormatted.endsWith('.')) titleFormatted += ' .';
+            lines.push(`245 10 $a ${titleFormatted} / $c ${respClause}`);
+
+            // 246 - Título Paralelo se houver
+            if (titleAlt) {
+                lines.push(`246 1 $i Título em outro idioma : $a ${titleAlt}`);
+            }
+
+            // 264 - Publicação
+            lines.push(`264  1 $a ${course.city} : $b UCS, $c ${yearSubmitted}.`);
+
+            // 300 / 336 / 337 / 338 / 347
+            lines.push(`300   $a ${physPages} : $b il.`);
+            lines.push(`336   $a texto $b txt $2 rdacontent`);
+            lines.push(`337   $a computador $b c $2 rdamedia`);
+            lines.push(`338   $a recurso on-line $b cr $2 rdacarrier`);
+            lines.push(`347   $a Arquivo de texto, $b PDF, $c ${fileSize}`);
+
+            // 502 - Nota de Dissertação/TCC (Substitui 'ANO' pelo ano de defesa)
+            const note502Text = course.note502Template.replace('{ANO}', yearSubmitted);
+            lines.push(`502   $a ${note502Text}`);
+
+            // NOTAS SELECIONÁVEIS (504 e 500)
+            if (chkBiblio) lines.push(`504   $a Inclui bibliografia.`);
+            if (chkAnexos) lines.push(`500   $a Inclui anexos.`);
+            if (chkApendices) lines.push(`500   $a Inclui apêndices.`);
+            if (chkGlossario) lines.push(`500   $a Inclui glossário.`);
+            if (chkIndice) lines.push(`500   $a Inclui índice.`);
+
+            // 506 - Restrição
+            if (chkConfidential) {
+                lines.push(`506 1 $a Arquivo retido por termo de confidencialidade.`);
+            }
+
+            // 520 - RESUMOS (Bloco único sem quebra de linha)
+            let abstractCount = 0;
+            let hasEnglishAbstract = false;
+
+            if (abstractPt) {
+                abstractCount++;
+                const cleanPt = abstractPt.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+                lines.push(`520   $a ${cleanPt} [resumo fornecido pelo autor]`);
+            }
+
+            if (abstractEn) {
+                abstractCount++;
+                hasEnglishAbstract = true;
+                const cleanEn = abstractEn.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+                lines.push(`520 8 $a Abstract : ${cleanEn} [resumo fornecido pelo autor]`);
+            }
+
+            if (abstractEs) {
+                abstractCount++;
+                const cleanEs = abstractEs.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+                lines.push(`520 8 $a Resumen : ${cleanEs} [resumo fornecido pelo autor]`);
+            }
+
+            // 546 - NOTA DE IDIOMA (quando houver mais de um resumo)
+            if (abstractCount > 1) {
+                if (abstractPt && abstractEn && abstractEs) {
+                    lines.push(`546   $a Texto em português, com resumo em inglês e espanhol.`);
+                } else if (abstractPt && abstractEn) {
+                    lines.push(`546   $a Texto em português, com resumo em inglês.`);
+                } else if (abstractPt && abstractEs) {
+                    lines.push(`546   $a Texto em português, com resumo em espanhol.`);
+                }
+            }
+
+            // ADICIONAR LINHAS DE ASSUNTOS
+            subjectLines.forEach(s => lines.push(s));
+
+            // 700 - Orientador e Colaboradores
+            if (advisorInverted) {
+                const datePart = advisorYear ? `, $d ${advisorYear}-` : '';
+                lines.push(`700 1 $a ${advisorInverted}${datePart} $e Orientador`);
+            }
+
+            if (othersInput) {
+                const othersList = othersInput.split(';');
+                othersList.forEach(other => {
+                    const cleanOther = other.trim();
+                    if (cleanOther) {
+                        lines.push(`700 1 $a ${cleanOther} $e Autor`);
+                    }
+                });
+            }
+
+            // 710 - Autoridade Pergamum do Curso
+            const authText = AUTHORITY_FULL_TEXTS[course.authCode] || "Universidade de Caxias do Sul";
+            lines.push(`710 2 $a ${authText} $e Instituição concedente de grau acadêmico`);
+
+            // 856 - URL / Handle
+            const handleUrl = uri || "https://repositorio.ucs.br/handle/11338/3041";
+            lines.push(`856 4 $z Versão digital (Clique aqui para acessar) $u ${handleUrl}`);
+
+            lines.push("<fim>");
+
+            document.getElementById('marcOutput').value = lines.join('\n');
+        }
+
+        // CARREGA O EXEMPLO COMPLETO DO ÉDERSON COPELI (CONFORME SOLICITADO)
+        function loadEdersonExample() {
+            // Selecionar Curso "Ciência da Computação - SEDE"
+            const select = document.getElementById('courseSelect');
+            const targetIndex = Array.from(select.options).findIndex(opt => opt.value.includes("Ciência da Computação - SEDE"));
+            if (targetIndex !== -1) select.selectedIndex = targetIndex;
+            updateCourseCard();
+
+            document.getElementById('dcAuthor').value = "Copelli, Éderson Luis";
+            document.getElementById('dcAuthorYear').value = "1991";
+            document.getElementById('dcAdvisor').value = "Ribeiro, Helena Graziottin";
+            document.getElementById('dcAdvisorYear').value = "1968";
+            document.getElementById('dcOthers').value = "Notari, Daniel Luís; Silva, Scheila de Avila e";
+            
+            document.getElementById('dcTitle').value = "Proposta de módulo de avaliação da qualidade da água para o portal Lacos Web";
+            document.getElementById('dcTitleAlt').value = "Proposal for a water quality assessment module for the Lacos Web portal";
+            document.getElementById('dcYearSubmitted').value = "2017";
+            document.getElementById('dcUri').value = "https://repositorio.ucs.br/handle/11338/3041";
+
+            document.getElementById('dcAbstractPt').value = "O Projeto LACOS (Lagoas Costeiras), tem por objetivo o estudo e levantamento de informações da situação das lagoas costeiras do Estado do Rio Grande do Sul, realizando coletas de dados para estudo e análise da qualidade da água, morfologia e ecologia das lagoas. Tendo em vista que praticamente todos os dados do projeto estavam armazenados em planilhas eletrônicas e formulários em forma física (papel) até o momento, foi desenvolvido um projeto para centralizar estes dados. Este projeto teve por objetivo a estruturação de um banco de dados para manter os dados coletados até então, bem como o desenvolvimento de um portal para acesso e manutenção, dando origem ao portal LACOS Web.";
+
+            document.getElementById('dcAbstractEn').value = "The LACOS Project (Coastal Lagoons) aims to study and collect information on the status of coastal lagoons in the State of Rio Grande do Sul, collecting data to study and analyze water quality, morphology and ecology of lagoons. Considering that practically all project data were stored in spreadsheets and physical forms until now, a project was developed to centralize these data.";
+
+            document.getElementById('dcAbstractEs').value = "";
+
+            document.getElementById('dcSubjects').value = "Projeto Lagoas Costeiras\nBanco de dados\nÁgua - Qualidade\nBrasil - História";
+
+            document.getElementById('physPages').value = "1 recurso on-line (120 páginas)";
+            document.getElementById('fileSize').value = "3.040 MB";
+
+            document.getElementById('chkBiblio').checked = true;
+            document.getElementById('chkAnexos').checked = false;
+            document.getElementById('chkApendices').checked = false;
+            document.getElementById('chkGlossario').checked = false;
+            document.getElementById('chkIndice').checked = false;
+            document.getElementById('chkConfidential').checked = false;
+
+            generateMarcOutput();
+        }
+
+        // LIMPAR TUDO
+        function clearAllFields() {
+            document.getElementById('dcAuthor').value = "";
+            document.getElementById('dcAuthorYear').value = "";
+            document.getElementById('dcAdvisor').value = "";
+            document.getElementById('dcAdvisorYear').value = "";
+            document.getElementById('dcOthers').value = "";
+            document.getElementById('dcTitle').value = "";
+            document.getElementById('dcTitleAlt').value = "";
+            document.getElementById('dcYearSubmitted').value = "";
+            document.getElementById('dcUri').value = "";
+            document.getElementById('dcAbstractPt').value = "";
+            document.getElementById('dcAbstractEn').value = "";
+            document.getElementById('dcAbstractEs').value = "";
+            document.getElementById('dcSubjects').value = "";
+
+            generateMarcOutput();
+        }
+
+        // COPIAR PARA ÁREA DE TRANSFERÊNCIA
+        function copyToClipboard() {
+            const textarea = document.getElementById('marcOutput');
+            textarea.select();
+            document.execCommand('copy');
+
+            const toast = document.getElementById('toastNotification');
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        // DOWNLOAD COMO ARQUIVO .TXT
+        function downloadTxtFile() {
+            const text = document.getElementById('marcOutput').value;
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'registro_marc21_pergamum.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // REGISTRO DE EVENTOS DE ATUALIZAÇÃO EM TEMPO REAL
+        function attachEventListeners() {
+            document.getElementById('courseSelect').addEventListener('change', () => {
+                updateCourseCard();
+                generateMarcOutput();
+            });
+
+            const inputs = document.querySelectorAll('input, textarea, select');
+            inputs.forEach(input => {
+                input.addEventListener('input', generateMarcOutput);
+                input.addEventListener('change', generateMarcOutput);
+            });
+
+            document.getElementById('btnLoadExample').addEventListener('click', loadEdersonExample);
+            document.getElementById('btnClearAll').addEventListener('click', clearAllFields);
+            document.getElementById('btnCopyMarc').addEventListener('click', copyToClipboard);
+            document.getElementById('btnDownloadTxt').addEventListener('click', downloadTxtFile);
+        }
+    </script>
+</body>
+</html>
